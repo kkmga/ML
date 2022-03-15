@@ -1,0 +1,39 @@
+import yfinance as yf
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+
+# Import the price data of ITC
+
+df = yf.download('ITC.NS','2010-01-01', '2022-3-14')
+df['Adj Close'].plot(figsize=(10,6))
+plt.legend()
+plt.grid()
+plt.show()
+df.tail()
+# Calculate the daily percentage change, mean and sigma
+df['daily_pct_change'] = df['Adj Close'].pct_change()
+mu = df['daily_pct_change'].iloc[:-252].mean()
+sigma = df['daily_pct_change'].iloc[:-252].std()
+
+# Creating the random walk simulation of the probable price path
+simulation = {}
+simulation['Actual'] = list(df['Adj Close'].iloc[-252:].values)
+
+for sim in range(1,50): # Taking 50 paths
+    simulation["Simulation_"+str(sim)] = [df['Adj Close'].iloc[-252]]
+    for days in range(251):
+        next_day = simulation["Simulation_"+str(sim)][-1]*np.exp((mu-(sigma**2/2))+sigma*np.random.normal())
+        simulation["Simulation_"+str(sim)].append(next_day)
+# Plotting the actual Adjusted Close price of General Motors
+df['Adj Close'][-252:].plot(figsize=(10,7),grid=True,legend=False)
+plt.xlabel('Year')
+plt.ylabel('Price')
+
+# Plotting the simulation of random walk
+
+simulation=pd.DataFrame(simulation)
+simulation.index=df[-252:].index
+simulation.plot(figsize=(10,7),grid=True,legend=False)
+plt.xlabel('Year')
+plt.ylabel('Price')
