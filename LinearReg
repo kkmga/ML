@@ -1,0 +1,82 @@
+# Linear Regression returns of Nifty based on Ril
+import numpy as np
+import pandas as pd
+import yfinance as yf
+import datetime
+import matplotlib.pyplot as plt
+import warnings
+warnings.filterwarnings("ignore") 
+from sklearn.linear_model import LinearRegression
+# Nifty is DV and Scrips as IDV
+# Data gathereing past 5 years data
+end1=datetime.date(2022,3,14)
+start1=end1-pd.Timedelta(days=365*5)
+nifty_df=yf.download("^NSEI", start = start1, end = end1, progress = False)
+Ril_df=yf.download("RELIANCE.NS", start = start1, end = end1, progress = False)
+
+# this is time series data, applying lagversion
+nifty_df['nifty'] = np.log(nifty_df['Adj Close'] / nifty_df['Adj Close'].shift(1))
+Ril_df['Ril'] = np.log(Ril_df['Adj Close'] / Ril_df['Adj Close'].shift(1))
+Ril_df.head()
+
+df = pd.concat([nifty_df['nifty'],Ril_df['Ril']] , axis = 1).dropna()
+df.to_csv(r"C:\Users\*****\Downloads\March2022_data_lin_regression.csv")
+#scatter plot
+plt.figure(figsize = (10, 6))
+plt.rcParams.update({'font.size': 14})
+plt.xlabel("Ril returns")
+plt.ylabel("Nifty returns")
+plt.title("Scatter plot of daily returns (Mar 2017 to Mar 2022)")
+plt.scatter(df['Ril'], df['nifty'])
+plt.show()
+df.corr()
+#Linear Regression
+slr_skl_model = LinearRegression()
+
+### Fit the model (sklearn calculates beta_0 and beta_1 here)
+
+X = df['Ril'].values.reshape(-1, 1)
+slr_skl_model_nifty = slr_skl_model.fit(X, df['nifty'])
+
+print("The intercept in the sklearn regression result is", \
+      np.round(slr_skl_model_nifty.intercept_, 4))
+print("The slope in the sklearn regression model is", \
+      np.round(slr_skl_model_nifty.coef_[0], 4))
+
+
+###
+plt.figure(figsize = (10, 6))
+plt.rcParams.update({'font.size': 14})
+plt.xlabel("Ril returns")
+plt.ylabel("Nifty returns")
+plt.title("Simple linear regression model")
+plt.scatter(df['Ril'], df['nifty'])
+plt.plot(X, slr_skl_model.predict(X), 
+         label='Y={:.4f}+{:.4f}X'.format(slr_skl_model_nifty.intercept_, \
+                                         slr_skl_model_nifty.coef_[0]), 
+             color='red')
+plt.legend()
+plt.show()
+
+ #Print the parameter estimates of the simple linear regression model
+
+print("\n")
+print("====================================================================")
+print("The intercept in the sklearn regression result is", np.round(slr_skl_model_nifty.intercept_, 4))
+print("The slope in the sklearn regression model is", np.round(slr_skl_model_nifty.coef_[0], 4))
+print("====================================================================")
+print("\n")
+ #Fit a multiple linear regression model to the data using sklearn
+
+### Create an instance of the class LinearRegression()
+mlr_skl_model = LinearRegression()
+
+### Fit the model (sklearn calculates beta_0 and beta_1 here)
+
+X = df[['Ril']]
+y = df['nifty']
+mlr_skl_model_nifty = mlr_skl_model.fit(X, y)
+print("The intercept in the sklearn regression result is", \
+      mlr_skl_model_nifty.intercept_)
+print("The slope in the sklearn regression model is", \
+      mlr_skl_model_nifty.coef_)
