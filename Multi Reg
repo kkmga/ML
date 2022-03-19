@@ -1,0 +1,76 @@
+# Linear Regression returns of Nifty based on HDFC, RIL,Infy,TCS,HDFC bank,Icici, kotak bank
+import numpy as np
+import pandas as pd
+import yfinance as yf
+import datetime
+import matplotlib.pyplot as plt
+import warnings
+warnings.filterwarnings("ignore") 
+from sklearn.linear_model import LinearRegression
+# Nifty is DV and Scrips as IDV
+# Data gathereing past 5 years data
+end1=datetime.date(2022,3,14)
+start1=end1-pd.Timedelta(days=365*5)
+nifty_df=yf.download("^NSEI", start = start1, end = end1, progress = False)
+HDFCbank_df=yf.download("HDFCBANK.NS", start = start1, end = end1, progress = False)
+Ril_df=yf.download("RELIANCE.NS", start = start1, end = end1, progress = False)
+Infy_df=yf.download("INFY.NS", start = start1, end = end1, progress = False)
+Tcs_df=yf.download("TCS.NS", start = start1, end = end1, progress = False)
+HDFC_df=yf.download("HDFC.NS", start = start1, end = end1, progress = False)
+Icici_df=yf.download("ICICIBANK.NS", start = start1, end = end1, progress = False)
+Kotak_df=yf.download("KOTAKBANK.NS", start = start1, end = end1, progress = False)
+
+# this is time series data, applying lagversion
+nifty_df['nifty'] = np.log(nifty_df['Adj Close'] / nifty_df['Adj Close'].shift(1))
+HDFCbank_df['HDFCbank'] = np.log(HDFCbank_df['Adj Close'] / HDFCbank_df['Adj Close'].shift(1))
+Ril_df['Ril'] = np.log(Ril_df['Adj Close'] / Ril_df['Adj Close'].shift(1))
+Infy_df['Infy'] = np.log(Infy_df['Adj Close'] / Infy_df['Adj Close'].shift(1))
+Tcs_df['Tcs'] = np.log(Tcs_df['Adj Close'] / Tcs_df['Adj Close'].shift(1))
+HDFC_df['HDFC'] = np.log(HDFC_df['Adj Close'] / HDFC_df['Adj Close'].shift(1))
+Icici_df['Icici'] = np.log(Icici_df['Adj Close'] / Icici_df['Adj Close'].shift(1))
+Kotak_df['Kotak'] = np.log(Kotak_df['Adj Close'] / Kotak_df['Adj Close'].shift(1))
+
+
+
+df = pd.concat([nifty_df['nifty'],HDFCbank_df['HDFCbank'],Ril_df['Ril'],Infy_df['Infy'],Tcs_df['Tcs'],HDFC_df['HDFC'],Icici_df['Icici'],Kotak_df['Kotak'] ] , axis = 1).dropna()
+df.to_csv(r"C:\Users\****\Downloads\Multi_Reg-March2022_data_multi_lin_regression.csv")
+#scatter plot
+plt.figure(figsize = (10, 6))
+plt.rcParams.update({'font.size': 14})
+plt.xlabel("Individual returns")
+plt.ylabel("Nifty returns")
+
+plt.title("Scatter plot of daily returns (Mar 2017 to Mar 2022)")
+plt.scatter(df['HDFCbank'], df['nifty'])
+plt.scatter(df['Ril'], df['nifty'])
+plt.scatter(df['Tcs'], df['nifty'])
+plt.scatter(df['HDFC'], df['nifty'])
+plt.scatter(df['Icici'], df['nifty'])
+plt.scatter(df['Kotak'], df['nifty'])
+
+plt.show()
+df.corr()
+
+
+
+
+X = df.drop('nifty',axis=1)
+y=df['nifty']
+# importing train_test_split from sklearn
+from sklearn.model_selection import train_test_split
+# splitting the data
+x_train, x_test, y_train, y_test = train_test_split(X, y, test_size = 0.2, random_state = 42)
+# creating an object of LinearRegression class
+LR = LinearRegression()
+# fitting the training data
+LR.fit(x_train,y_train)
+y_prediction =  LR.predict(x_test)
+print(y_prediction)
+# importing r2_score module
+from sklearn.metrics import r2_score
+from sklearn.metrics import mean_squared_error
+# predicting the accuracy score
+score=r2_score(y_test,y_prediction)
+print('r2 socre is ',score)
+print('mean_sqrd_error is==',mean_squared_error(y_test,y_prediction))
+print('root_mean_squared error of is==',np.sqrt(mean_squared_error(y_test,y_prediction)))
